@@ -1,5 +1,6 @@
 # user Info handler
 import sqlite3 as sql
+from AES import encrypt
 
 class userInfoHandler:
 
@@ -39,7 +40,8 @@ class userInfoHandler:
         exist, foo = self._search(account_name)
     
         if(exist == 0):
-            tmp = (str(self.uid), account_name, password)
+            encrypted_password = encrypt(password)
+            tmp = (str(self.uid), account_name, encrypted_password)
             self.c.execute('INSERT INTO Users VALUES(?, ?, ?)', tmp)
             self.uid = self.uid+1
             return 'SUCCESS'
@@ -56,12 +58,13 @@ class userInfoHandler:
             return 'INVALID_ACCOUNT'
         else:
             print(info)
-            if len(info) > 1:
+            if len(info) != 1:
                 return 'ERROR'
             else:
                 userInfo = info[0];
                 # NEED ENCRYPT!!
-                if password == userInfo[2]:
+                encrypted_password = encrypt(password)
+                if encrypted_password == userInfo[2]:
                     return 'SUCCESS'
                 else:
                     return 'WRONG_PW'
