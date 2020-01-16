@@ -16,6 +16,6 @@ For Windows, use the command "pip3 install -i https://pypi.douban.com/simple pyc
 
 To encrypt or decrypt anything, just add "from AES import encrypt , decrypt" to use.
 
-encryption(input) : the type of both input and output is string.
+encrypt(input) : the type of both input and output is string.
 
-decryption(input) : the type of both input and output is string.
+decrypt(input) : the type of both input and output is string.
