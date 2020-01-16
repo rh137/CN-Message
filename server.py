@@ -50,6 +50,7 @@ def new_client(cli, addr):
             password = cli.recv(1024).decode('ascii')
 
             # NEED TO ENCRYPT password !!!
+            # encrypt in uih side
 
             result = uih.register(account_name, password)
             
