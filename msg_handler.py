@@ -1,3 +1,6 @@
+import time
+import os
+
 def send( source , destination , message):
 
     #determine if destination exists
