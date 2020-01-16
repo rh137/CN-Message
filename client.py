@@ -17,7 +17,10 @@ print(msg.decode('ascii'))
 
 req = ''
 
-while req != 'exit':
+login = False
+Login_SUCCESS = 'Login Success!'
+
+while req != 'exit' or login:
 	req = input()
 	s.send(req.encode('ascii'))
 	
@@ -28,5 +31,8 @@ while req != 'exit':
 
 	msg = s.recv(1024)
 	print(msg.decode('ascii'))
+	
+	if msg.decode('ascii') == Login_SUCCESS:
+		login = True
 
 s.close()
