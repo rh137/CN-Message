@@ -31,22 +31,22 @@ class Server:
 
 #####################################################################   
     def logged_in_client(self, cli, addr):      # multi thread
+        
+        print('(wlcm)', cli.recv(1024).decode('ascii'))
+    
+        cli.send(str(addr).encode('ascii'))
+        print('(addr)', cli.recv(1024).decode('ascii'))
+        cli.send(str((self.host_ip, self.port2)).encode('ascii'))
+        print('(self)', cli.recv(1024).decode('ascii'))
+            
         while True:
 
-            print('(wlcm)', cli.recv(1024).decode('ascii'))
-
-            cli.send(str(addr).encode('ascii'))
-            print('(addr)', cli.recv(1024).decode('ascii'))
-            cli.send(str((self.host_ip, self.port2)).encode('ascii'))
-            print('(self)', cli.recv(1024).decode('ascii'))
+            msg_recv = cli.recv(1024).decode('ascii')
+            print(addr, msg_recv)
             
+            msg_send = str(addr) + '[logged in] msg recv: ' + msg_recv
+            cli.send(msg_send.encode('ascii'))
             
-            # TODO: update (cli_s1_addr, cli_s2_socket_object) table
-            # this is done in listening_msg
-
-            msg_recv = '123'
-            while True:
-                pass
 
             # need strtok
             if   msg_recv == 'send':
