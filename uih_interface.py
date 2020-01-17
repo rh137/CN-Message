@@ -64,6 +64,15 @@ def request_to_UIH_handler(self):            # singleton
             result = uih.login(account_name, password, addr)
             self.result_list.append((ID, result))
 
+        elif req[1] == 'update_online_table':
+            ID = req[0]
+            dest_s_addr = req[2][0]
+            dest_s2_cli = req[2][1]
+            result = uih.update_online_table(dest_s_addr, dest_s2_cli)
+            print(result)
+            self.result_list.append((ID, result))
+            pass
+
         elif req[1] == 'send':
             ID = req[0]
             account_name = req[2][0]
@@ -77,4 +86,3 @@ def request_to_UIH_handler(self):            # singleton
             #self.result_list.append((ID, result))       
         else:
             pass
-
