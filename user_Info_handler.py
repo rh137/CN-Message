@@ -33,7 +33,7 @@ class userInfoHandler:
         self.c.execute('SELECT * FROM Users')
         tmp = self.c.fetchall()
         for t in tmp:
-            self.online_table.append((t[0], t[1], False, None))
+            self.online_table.append((t[0], t[1], False, None, None, None, None))
        
         for i in self.online_table:
             print(i)
@@ -61,7 +61,7 @@ class userInfoHandler:
             self.c.execute('INSERT INTO Users VALUES(?, ?, ?)', tmp)
             self.conn.commit()
             
-            self.online_table.append((self.uid, account_name, False, None))
+            self.online_table.append((self.uid, account_name, False, None, None, None, None))
 
             self.uid = self.uid+1
        
@@ -109,6 +109,20 @@ class userInfoHandler:
     def logout(self):
         pass
 
+
+    def update_online_table(self, dest_s_addr, dest_s2_cli):
+        print('type of dest_s_addr: ', type(dest_s_addr))
+        print('type of dest_s2_cli:', type(dest_s2_cli))
+        for i, user in enumerate(self.online_table):
+            print('type of user[addr]:', type(user[3]))
+            if user[3] == dest_s_addr:
+                if user[2] == False:
+                    return 'ERRORoffline'
+                else:
+                    user_tmp = list(user)
+                    user_tmp[4] = dest_s2_cli
+                    self.online_table[i] = tuple(user_tmp)
+                    return 'SUCCESS'
 
 #if __name__ == '__main__':
 #    main()

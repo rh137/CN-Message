@@ -6,8 +6,9 @@ import _thread
 import queue
 import time
 
-import user_Info_handler
+#import user_Info_handler
 from integrity_checker import check_integrity
+from myparser import parse_addr_str
 
 
 class Server:
@@ -39,12 +40,10 @@ class Server:
             cli.send(str((self.host_ip, self.port2)).encode('ascii'))
             print('(self)', cli.recv(1024).decode('ascii'))
             
-        # the following two lines should appear in listening_msg
-            #cli_addr = cli.recv(1024).decode('ascii')
-            #print('[logged in client] who is this?', cli_addr)
             
-            # TODO: uptate (cli_s1_addr, cli_s2_socket_object) table
-            
+            # TODO: update (cli_s1_addr, cli_s2_socket_object) table
+            # this is done in listening_msg
+
             msg_recv = '123'
             while True:
                 pass
@@ -74,7 +73,8 @@ class Server:
             msg_send = str(addr) + 'msg recv: ' + msg_recv
             cli.send(msg_send.encode('ascii'))
         
-        
+       
+
             if   msg_recv == 'reg':
 
                 msg_send = 'account name: '
@@ -99,7 +99,10 @@ class Server:
                     print('ERROR Register')
                     return
 
+
+
             elif msg_recv == 'login':
+
                 msg_send = 'account name: '
                 cli.send(msg_send.encode('ascii'))
                 account_name = cli.recv(1024).decode('ascii')
@@ -134,6 +137,7 @@ class Server:
                 else:
                     print('ERROR Login')
                     return
+
 
 
             elif msg_recv == 'exit':
@@ -180,13 +184,26 @@ class Server:
             
             print('[msg socket] Got connection from', addr)
 
-            cli_addr = c.recv(1024).decode('ascii')
-            print('[msg socket] who is this?', cli_addr)
-            # update (dest_s_addr, dest_s2_cli) table
-            
+            cli_addr_str = c.recv(1024).decode('ascii')
+            print('[msg socket] who is this?', cli_addr_str)
+            cli_addr = parse_addr_str(cli_addr_str)
+
             rst = check_integrity(c, addr)
             if rst == 'BAD':
                 continue
+
+
+            # update (dest_s_addr, dest_s2_cli) table
+            result = self.push_req('update_online_table', (cli_addr, c,))
+            
+            if   result == 'SUCCESS':
+                print('[online table] update success')
+            elif result == 'ERRORoffline':
+                print('[online table] ERROR updating online table(the one to be updated is offline')
+                return
+            else:
+                print('[online table] unexpected error')
+
  
             msg = '[msg socket] Successfully connected to ' + self.host_ip + ':' + str(_port) + '\n'
             c.send(msg.encode('ascii'))
@@ -239,7 +256,9 @@ class Server:
                 for cli in self.cli_list:
                     cli.close()
                 break
-            elif req == 'show':
+            elif req == 'ot':
+                pass
+            elif req == 'status':
                 pass
 
         self.s.close()
