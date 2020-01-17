@@ -16,7 +16,7 @@ def waiting_for_msg(server_addr_str, my_addr_str):
     while True:
         msg_recv = msg_socket.recv(1024)
         print(msg_recv.decode('ascii'))
-        if msg_recv.decode('ascii') == 'exit':
+        if msg_recv.decode('ascii') == 'logout':
             break
 
     msg_socket.close()
