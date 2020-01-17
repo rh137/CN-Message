@@ -91,9 +91,17 @@ class Server:
                     print('FORMAT ERROR query')
                     cli.send('FORMAT ERROR query\nusage: query <dest>'.encode('ascii'))
 
-            elif msg[0] == 'exit':
-                print('exit!!!')
-                #logout
+            elif msg[0] == 'logout':
+                if len(msg) == 1:
+                    print('logout!!!')
+                    msgs = self.push_req(msg[0], account_name)
+                    msgs.send(msg[0].encode('ascii'))
+                    msgs.close()
+                    cli.send('Bye Bye'.encode('ascii'))
+                    break
+                else:
+                    print('FORMAT ERROR logout')
+                    cli.send('FORMAT ERROR logout\nusage: logout'.encode('ascii'))
 
             else:
                 pass
@@ -155,11 +163,12 @@ class Server:
 
                 result = self.push_req(msg_recv, (account_name, password, addr))
 
-                if   result == 'SUCCESS':
+                if result == 'SUCCESS':
                     msg_send = 'Login Success!'
                     cli.send(msg_send.encode('ascii'))
                     print('Login Success')
                     self.logged_in_client(cli, addr,account_name)
+                    break
                 
                 elif result == 'INVALID_ACCOUNT':
                     msg_send = 'Login Failed! Your account name doesn\'t exist!'
@@ -180,14 +189,12 @@ class Server:
                     print('ERROR Login')
                     return
 
-
-
             elif msg_recv == 'exit':
                 break
 
         self.cli_list.remove(cli)
         cli.close()
-
+        _thread.exit()
         return
 
 

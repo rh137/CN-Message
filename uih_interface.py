@@ -93,6 +93,13 @@ def request_to_UIH_handler(self):            # singleton
             #ID = req[0]
             #account_name = req[2][0]
             #result = uih.ifonline(account_name)
-            #self.result_list.append((ID, result))       
+            #self.result_list.append((ID, result))     
+
+        elif req[1] == 'logout':
+            ID = req[0]
+            account_name = req[2]
+            result = uih.logout(account_name)
+            self.result_list.append((ID, result))                  
+              
         else:
             pass
