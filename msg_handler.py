@@ -1,80 +1,69 @@
-import time
-import os
+def send( source , destination , message , cli , result):
 
-def send( source , destination , message):
+    if result[0] == 'INVALID_ACCOUNT':
+        msg = destination + ' does not exist.\n'
+        cli.send(msg.encode('ascii'))
+    else:
+        packet = '[' + time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())  + ']' + source + ':' + message + '\n'
 
-    #determine if destination exists
-    #If not, send to source "destination + 'does not exist.\n'"
+        dir = os.path.abspath('.') + '\data'
+        srcdir = dir + "\\" + source
+        desdir = dir + "\\" + destination
 
-    #otherwise
-    packet = '[' + time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())  + ']' + source + ':' + message + '\n'
+        if not os.path.exists(dir):
+            os.mkdir(dir)
 
-    dir = os.path.abspath('.') + '\data'
-    srcdir = dir + "\\" + source
-    desdir = dir + "\\" + destination
+        if not os.path.exists(srcdir):
+            os.mkdir(srcdir)
 
-    if not os.path.exists(dir):
-        os.mkdir(dir)
+        if not os.path.exists(desdir):
+            os.mkdir(desdir)
 
-    if not os.path.exists(srcdir):
-        os.mkdir(srcdir)
+        srcfile = open(srcdir + "\\" + destination + '.txt','a')
+        desfile = open(desdir + "\\" + source + '.txt','a')
 
-    if not os.path.exists(desdir):
-        os.mkdir(desdir)
+        srcfile.write(packet)
+        desfile.write(packet)
 
-    srcfile = open(srcdir + "\\" + destination + '.txt','a')
-    desfile = open(desdir + "\\" + source + '.txt','a')
+        srcfile.close()
+        desfile.close()
 
-    srcfile.write(packet)
-    desfile.write(packet)
-
-    srcfile.close()
-    desfile.close()
-
-    #determine if destination is offline
-    #if not, send packet to destination
-
-    #otherwise
-    #buffile = open(desdir + "\\" + buffer + '.txt','a')
-    #buffile.write(packet)
-    #buffile.close()
+        if result[0] == 'ONLINE':
+            result[1].send(packet.encode('ascii'))
+        elif result[0] == 'OFFLINE':
+            buffile = open(desdir + "\\" + buffer + '.txt','a')
+            buffile.write(packet)
+            buffile.close()
 
 
-
-def query( source , destination ):
+def query( source , destination , cli ):
 
     path = os.path.abspath('.') + '\data' + "\\" + source + "\\" + destination + '.txt'
 
     if not os.path.exists(path):
         msg = 'You never chat with ' + destination + '.\n'
-
-        #send to source
+        cli.send(msg.encode('ascii'))
 
     else:
         srcfile = open(path)
         for srcpacket in srcfile.readlines():
             srcpacket = srcpacket.strip('\n')
-
-            #send to source
-
+            cli.send(srcpacket.encode('ascii'))
         srcfile.close()
 
 
-def receive( source ):
+def receive( source , cli ):
 
     path = os.path.abspath('.') + '\data' + "\\" + source + "\\" + 'buffer.txt'
 
     if not os.path.exists(path):
         msg = 'There is no message when you are offline.\n'
-        #send to source
+        cli.send(msg.encode('ascii'))
 
     else:
         srcfile = open(path)
         for srcpacket in srcfile.readlines():
             srcpacket = srcpacket.strip('\n')
-
-            #send to source
-
-
+            cli.send(srcpacket.encode('ascii'))
         srcfile.close()
         os.remove(path)
