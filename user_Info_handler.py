@@ -109,7 +109,7 @@ class userInfoHandler:
             if user[1] == account_name:
                 if user[2] == True:
                     return ('ONLINE',user[4])
-                else
+                else:
                     return ('OFFLINE',None)
         return ('INVALID_ACCOUNT',None)
 
