@@ -30,7 +30,7 @@ class Server:
     from uih_interface import request_to_UIH_handler
 
 #####################################################################   
-    def logged_in_client(self, cli, addr):      # multi thread
+    def logged_in_client(self, cli, addr , account_name):      # multi thread
         
         print('(wlcm)', cli.recv(1024).decode('ascii'))
     
@@ -47,17 +47,29 @@ class Server:
             msg_send = str(addr) + '[logged in] msg recv: ' + msg_recv
             cli.send(msg_send.encode('ascii'))
             
+            msg = msg_recv.split(' ',2)
 
-            # need strtok
-            if   msg_recv == 'send':
+            if msg[0] == 'send' and len(msg) == 3:
+                print('sending!!!')
+                send(account_name,msg[1],msg[2],cli,self.push_req(msg_recv, msg[1]))
                 pass
-            elif msg_recv == 'sendfile':
+            elif msg[0] == 'sendfile' and len(msg) == 3:
+                print('sendfile!!!')
                 pass
-            elif msg_recv == 'query':
+            elif msg[0] == 'query' and len(msg) == 2:
+                print('query!!!')
+                query(account_name,msg[1],cli)
                 pass
-            elif msg_recv == 'exit':
+            elif msg[0] == 'exit' and len(msg) == 1:
+                print('exit!!!')
                 #logout
                 pass
+            else:
+                msg_send = 'Invalid instruction.\nsend : send + [account name] + [message]\nsend file : sendfile + [account name] + [file relative path]\nquery : query + [account name]\nexit : exit\n'
+                print(msg_send)
+                cli.send(msg_send.encode('ascii'))
+                pass
+
         return
 
 #####################################################################   
@@ -117,7 +129,7 @@ class Server:
                     msg_send = 'Login Success!'
                     cli.send(msg_send.encode('ascii'))
                     print('Login Success')
-                    self.logged_in_client(cli, addr)
+                    self.logged_in_client(cli, addr,account_name)
                 
                 elif result == 'INVALID_ACCOUNT':
                     msg_send = 'Login Failed! Your account name doesn\'t exist!'
