@@ -82,7 +82,8 @@ def request_to_UIH_handler(self):            # singleton
 
         elif req[1] == 'show_online_table':
             try:
-                print(self.uih.online_table)
+                for i in uih.online_table:
+                    print(i)
                 result = 'SUCCESS'
             except:
                 result = 'FAIL'

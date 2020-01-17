@@ -389,18 +389,24 @@ class Server:
         _thread.start_new_thread(self.listening_fout, (self.s4, self.port4))
 
 
+        time.sleep(1)
+
         while True:
-            req = input('->')
+            req = input('>>>')
             if   req == 'exit':
                 for cli in self.cli_list:
                     cli.close()
                 break
 
             elif req == 'ot':
-                result = push_req('show_online_table', ())
+                result = self.push_req('show_online_table', ())
+                print('show online table ', result, '!!!')
             
-            elif req == 'status':
-                pass
+            elif req == 'info':
+                print('[server info] client can access this server via ({}:{})'.format(self.host_ip, self.port))
+            
+            elif req == 'help':
+                print('ot:   show online table\ninfo: show server ip:port\nexit: terminate server')
 
         self.s.close()
         self.s2.close()
