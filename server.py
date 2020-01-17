@@ -13,13 +13,17 @@ from integrity_checker import check_integrity
 class Server:
     
     host_ip = None
+    port    = None
+    port2   = None
+    port3   = None
     cli_list = []
     dbq = None 
     result_list = []
     global_req_ID = 0
     req_ID_lock = _thread.allocate_lock()
 
-   
+
+#####################################################################   
     def get_result(self, ID):           # multi thread
         result = None
         while result == None:
@@ -33,6 +37,7 @@ class Server:
             time.sleep(0.05)
         return result
     
+#####################################################################   
     def push_req(self, req_msg, argument):    # multi thread
         self.req_ID_lock.acquire()
         tid = _thread.get_ident()
@@ -53,13 +58,26 @@ class Server:
 
 
 
+#####################################################################   
     def logged_in_client(self, cli, addr):      # multi thread
         while True:
-            msg_recv = cli.recv(1024)
-            msg_recv = msg_recv.decode('ascii')
-            print(addr, msg_recv)
-            msg_send = str(addr) + 'msg recv: ' + msg_recv
-            cli.send(msg_send.encode('ascii'))
+
+            print('(wlcm)', cli.recv(1024).decode('ascii'))
+
+            cli.send(str(addr).encode('ascii'))
+            print('(addr)', cli.recv(1024).decode('ascii'))
+            cli.send(str((self.host_ip, self.port2)).encode('ascii'))
+            print('(self)', cli.recv(1024).decode('ascii'))
+            
+        # the following two lines should appear in listening_msg
+            #cli_addr = cli.recv(1024).decode('ascii')
+            #print('[logged in client] who is this?', cli_addr)
+            
+            # TODO: uptate (cli_s1_addr, cli_s2_socket_object) table
+            
+            msg_recv = '123'
+            while True:
+                pass
 
             # need strtok
             if   msg_recv == 'send':
@@ -73,6 +91,7 @@ class Server:
                 pass
         return
 
+#####################################################################   
     def new_client(self, cli, addr):        # multi thread
         self.cli_list.append(cli)
     
@@ -156,6 +175,7 @@ class Server:
         return
 
 
+#####################################################################   
     def request_to_UIH_handler(self):            # singleton
 
         uih = user_Info_handler.userInfoHandler()
@@ -191,6 +211,7 @@ class Server:
 
 
 
+#####################################################################   
     def listening(self, socket, _port):         # singleton
         socket.listen(100)
 
@@ -199,13 +220,13 @@ class Server:
 
         while True:
             c, addr = socket.accept()
-            print('Got connection from', addr)
+            print('[req socket] Got connection from', addr)
             
             rst = check_integrity(c, addr)
             if rst == 'BAD':
                 continue
             
-            msg = 'Successfully connected to ' + self.host_ip + ':' + str(_port) + '\n'
+            msg = '[req socket] Successfully connected to ' + self.host_ip + ':' + str(_port) + '\n'
             #msg = msg + 'What\'s your request?'
             c.send(msg.encode('ascii'))
     
@@ -213,51 +234,66 @@ class Server:
 
         return
 
+#####################################################################   
     def listening_msg(self, socket, _port):
         socket.listen(100)
 
         while True:
             c, addr = socket.accept()
-            print('Got connection from', addr)
+            print('[msg socket] Got connection from', addr)
 
+            cli_addr = c.recv(1024).decode('ascii')
+            print('[msg socket] who is this?', cli_addr)
+            # update (dest_s_addr, dest_s2_cli) table
+            
             rst = check_integrity(c, addr)
             if rst == 'BAD':
                 continue
  
-            msg = 'Successfully connected to ' + self.host_ip + ':' + str(_port) + '\n'
+            msg = '[msg socket] Successfully connected to ' + self.host_ip + ':' + str(_port) + '\n'
             c.send(msg.encode('ascii'))
 
-            # exchange msg
-            # update (dest_s_addr, dest_s2_cli) table
+        # exchange msg
 
         return
 
 
-
+#####################################################################   
     def run(self):              # singleton
                                 # conceptually, main()
 
-        port = input('port: ')
-        port = int(port)
-        port2 = input('port2: ')
-        port2 = int(port2)
-
+        self.port  = input('port:  ')
+        self.port  = int(self.port)
+        #port2 = input('port2: ')
+        #port2 = int(port2)
+        #port3 = input('port3: ')
+        #port3 = int(port3)
+        self.port2 = (self.port + 1) % 65536
+        if self.port2 < 10000: self.port2 += 10000
+        self.port3 = (self.port + 2) % 65536
+        if self.port3 < 10000: self.port3 += 10000
 
         host_name = socket.gethostname()
         self.host_ip = socket.gethostbyname(host_name)
         print("host ip: ", self.host_ip)
-        print("port:    ", port)
-        print("port2:   ", port2)
+        print("port:    ", self.port)
+        print("port2:   ", self.port2)
+        print("port3:   ", self.port3)
 
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(('', port))
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.bind(('', self.port))
 
-        s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s2.bind(('', port2))
+        self.s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s2.bind(('', self.port2))
 
-        _thread.start_new_thread(self.listening,(s, port))
-        _thread.start_new_thread(self.listening_msg,(s2, port2))
+        self.s3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s3.bind(('', self.port3))
+
+        _thread.start_new_thread(self.listening,(self.s, self.port))
+        _thread.start_new_thread(self.listening_msg,(self.s2, self.port2))
+        # TODO: start new thread for file transfer socket
+        #   issue: need 2 sockets for file in/out?
 
         while True:
             req = input('->')
@@ -268,10 +304,9 @@ class Server:
             elif req == 'show':
                 pass
 
-        s.close()
-        s2.close()
+        self.s.close()
+        self.s2.close()
+        self.s3.close()
 
-
-#main()
 server = Server()
 server.run()
