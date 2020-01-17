@@ -84,6 +84,7 @@ while req != 'exit' or login == True:
         print('[from logout]\n', msg)
         if msg == 'Bye Bye':
             login = False
+            break
 	
     if msg_r.decode('ascii') == Login_SUCCESS and login == False:
 	# create a new thread connecting to server msg socket
@@ -110,3 +111,4 @@ while req != 'exit' or login == True:
         print(msg.decode('ascii'))
 
 s.close()
+
