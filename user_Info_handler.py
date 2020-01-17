@@ -116,19 +116,31 @@ class userInfoHandler:
     def logout(self):
         pass
 
-    def update_online_table(self, dest_s_addr, dest_s2_cli):
-        print('type of dest_s_addr: ', type(dest_s_addr))
-        print('type of dest_s2_cli:', type(dest_s2_cli))
+    def update_online_table(self, dest_s_addr, dest_s2_cli, func):
+        #print('type of dest_s_addr: ', type(dest_s_addr))
+        #print('type of dest_s2_cli:', type(dest_s2_cli))
+        
+        which = -1
+        if   func == 'msg':
+            which = 4
+        elif func == 'fin':
+            which = 5
+        elif func == 'fout':
+            which = 6
+
+        if which == -1:
+            return 'ERROR func'
+
         for i, user in enumerate(self.online_table):
-            print('type of user[addr]:', type(user[3]))
+            #print('type of user[addr]:', type(user[3]))
             if user[3] == dest_s_addr:
                 if user[2] == False:
                     return 'ERRORoffline'
                 else:
                     user_tmp = list(user)
-                    user_tmp[4] = dest_s2_cli
+                    user_tmp[which] = dest_s2_cli
                     self.online_table[i] = tuple(user_tmp)
-                    return 'SUCCESS'
+                    return 'SUCCESS' 
 
 
 

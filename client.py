@@ -17,6 +17,35 @@ def waiting_for_msg(server_addr_str, my_addr_str):
         print(msg_recv.decode('ascii'))
 
 
+def waiting_for_fin(server_addr_str, my_addr_str):
+    server_addr = parse_addr_str(server_addr_str)
+    fin_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host = server_addr[0]
+    port = server_addr[1]
+    fin_socket.connect((host, port))
+
+    fin_socket.send(my_addr_str.encode('ascii'))
+
+    while True:
+        pass
+        # TODO: handling waiting file input
+        
+
+def waiting_for_fout(server_addr_str, my_addr_str):
+    server_addr = parse_addr_str(server_addr_str)
+    fout_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host = server_addr[0]
+    port = server_addr[1]
+    fout_socket.connect((host, port))
+
+    fout_socket.send(my_addr_str.encode('ascii'))
+
+    while True:
+        pass
+        # TODO: handling waiting file output
+
+
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 host = input('host ip: ')
@@ -47,7 +76,6 @@ while req != 'exit' or login == True:
 
         msg = s.recv(1024)
         print(msg.decode('ascii'))
-        #time.sleep(0.05)
      
     # after login
     elif req.split(' ')[0] == 'send' and login == True:
@@ -68,29 +96,44 @@ while req != 'exit' or login == True:
         pass
 
 
-	
+
+    # login success => connect 3 other sockets	
     if msg_r.decode('ascii') == Login_SUCCESS and login == False:
-	# create a new thread connecting to server msg socket
         login = True
         s.send('welcome msg received'.encode('ascii'))
 
+        # create a new thread connecting to server msg socket
         msg = s.recv(1024)
         myaddr = msg.decode('ascii')
-        #print('identity:', myaddr)
-        #print('type:     ({}, {})'.format(type(myaddr[0]), type(myaddr[1])))
 
         s.send('my addr received'.encode('ascii'))
 
+    # socket 2 for receiving message (client-side)
         msg = s.recv(1024)
         svaddr = msg.decode('ascii')
-        #print('dest:    ', svaddr)
-        #print('type:     ({}, {})'.format(type(svaddr[0]), type(svaddr[1])))
 		
         s.send('sv addr received'.encode('ascii'))
 
         _thread.start_new_thread(waiting_for_msg, (svaddr, myaddr))
 
-        msg = s.recv(65536)     # offline message
+    # socket 3 for  SENDING  files (client-side)
+        msg = s.recv(1024)
+        s3addr = msg.decode('ascii')
+
+        s.send('s3 addr received'.encode('ascii'))
+
+        _thread.start_new_thread(waiting_for_fout, (s3addr, myaddr))
+
+    # socket 4 for RECEIVING files (client-side)
+        msg = s.recv(1024)
+        s4addr = msg.decode('ascii')
+
+        s.send('s4 addr received'.encode('ascii'))
+
+        _thread.start_new_thread(waiting_for_fin, (s4addr, myaddr))
+
+    # receiving offline message
+        msg = s.recv(65536)
         print(msg.decode('ascii'))
 
 s.close()

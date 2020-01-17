@@ -11,14 +11,19 @@ from integrity_checker import check_integrity
 from myparser import parse_addr_str
 from msg_handler import send, query, receive
 
+MAX_CONN = 100
+
 class Server:
     
     host_ip = None
     port    = None
     port2   = None
     port3   = None
+    port4   = None
     cli_list = []
-    cli_list_msg = []
+    cli_list_msg  = []
+    cli_list_fin  = []
+    cli_list_fout = []
     dbq = None 
     result_list = []
     global_req_ID = 0
@@ -33,10 +38,18 @@ class Server:
     def logged_in_client(self, cli, addr , account_name):      # multi thread
         
         print('(wlcm)', cli.recv(1024).decode('ascii'))
+        
         cli.send(str(addr).encode('ascii'))
         print('(addr)', cli.recv(1024).decode('ascii'))
+        
         cli.send(str((self.host_ip, self.port2)).encode('ascii'))
-        print('(self)', cli.recv(1024).decode('ascii'))
+        print('( s2 )', cli.recv(1024).decode('ascii'))
+
+        cli.send(str((self.host_ip, self.port3)).encode('ascii'))
+        print('( s3 )', cli.recv(1024).decode('ascii'))
+
+        cli.send(str((self.host_ip, self.port4)).encode('ascii'))
+        print('( s4 )', cli.recv(1024).decode('ascii'))
 
         msg_send = receive(account_name)
         cli.send(msg_send.encode('ascii'))
@@ -178,11 +191,9 @@ class Server:
         return
 
 
-
-
 #####################################################################   
     def listening(self, socket, _port):         # singleton
-        socket.listen(100)
+        socket.listen(MAX_CONN)
 
         _thread.start_new_thread(self.request_to_UIH_handler, ())
         print('after queue handler thread')
@@ -196,7 +207,6 @@ class Server:
                 continue
             
             msg = '[req socket] Successfully connected to ' + self.host_ip + ':' + str(_port) + '\n'
-            #msg = msg + 'What\'s your request?'
             c.send(msg.encode('ascii'))
     
             _thread.start_new_thread(self.new_client, (c, addr))
@@ -205,7 +215,7 @@ class Server:
 
 #####################################################################   
     def listening_msg(self, socket, _port):
-        socket.listen(100)
+        socket.listen(MAX_CONN)
 
         while True:
             c, addr = socket.accept()
@@ -222,18 +232,22 @@ class Server:
                 continue
 
 
-            # update (dest_s_addr, dest_s2_cli) table
-            result = self.push_req('update_online_table', (cli_addr, c,))
+            # update online table
+            result = self.push_req('update_online_table', (cli_addr, c, 'msg',))
             
             if   result == 'SUCCESS':
-                print('[online table] update success')
+                print('[msg(4) online table] update success')
             elif result == 'ERRORoffline':
-                print('[online table] ERROR updating online table(the one to be updated is offline')
+                print('[msg(4) online table] ERROR updating online table(the one to be updated is offline')
+                return
+            elif result == 'ERROR func':
+                print('[msg(4) online table] ERROR wrong func type')
                 return
             else:
-                print('[online table] unexpected error')
+                print('[msg(4) online table] unexpected error')
+                return
 
- 
+
             msg = '[msg socket] Successfully connected to ' + self.host_ip + ':' + str(_port) + '\n'
             c.send(msg.encode('ascii'))
 
@@ -241,6 +255,83 @@ class Server:
 
         return
 
+#####################################################################
+    def listening_fin(self, s_fin, port_fin):
+        s_fin.listen(MAX_CONN)
+
+        while True:
+            c, addr = s_fin.accept()
+            self.cli_list_fin.append(c)
+
+            print('[fin socket] Got connection from', addr)
+
+            cli_addr_str = c.recv(1024).decode('ascii')
+            print('[fin socket] who is this?', cli_addr_str)
+            cli_addr = parse_addr_str(cli_addr_str)
+
+            rst = check_integrity(c, addr)
+            if rst == 'BAD':
+                continue
+
+            #update online table
+            result = self.push_req('update_online_table', (cli_addr, c, 'fin'))
+            if   result == 'SUCCESS':
+                print('[fin(5) online table] update success')
+            elif result == 'ERRORoffline':
+                print('[fin(5) online table] ERROR updating online table(the one to be updated is offline')
+                return
+            elif result == 'ERROR func':
+                print('[fin(5) online table] ERROR wrong func type')
+                return 
+            else:
+                print('[fin(5) online table] unexpected error')
+                return
+
+            msg = '[fin(5) socket(fout for client)] Successfully connected to ' + self.host_ip + ':' + str(port_fin) + '\n'
+            c.send(msg.encode('ascii'))
+
+        # for file from client to server
+
+        return
+
+#####################################################################
+    def listening_fout(self, s_fout, port_fout):
+        s_fout.listen(MAX_CONN)
+
+        while True:
+            c, addr = s_fout.accept()
+            self.cli_list_fout.append(c)
+            
+            print('[fout socket] Got connection from', addr)
+
+            cli_addr_str = c.recv(1024).decode('ascii')
+            print('[fout socket] who is this?', cli_addr_str)
+            cli_addr = parse_addr_str(cli_addr_str)
+
+            rst = check_integrity(c, addr)
+            if rst == 'BAD':
+                continue
+
+            #update online table
+            result = self.push_req('update_online_table', (cli_addr, c, 'fout',))
+
+            if   result == "SUCCESS":
+                print('[fout(6) online table] update success')
+            elif result == 'ERRORoffline':
+                print('[fout(6) online table] ERROR updating online table(the one to be updated is offline')
+                return
+            elif resulf == 'ERROR func':
+                print('[fout(6) online table] ERROR wrong func type')
+                return
+            else:
+                print('[fout(6) online table] unexpected error')
+                return
+
+
+            msg = '[fout(6) socket(fin for client)] Successfully connected to ' + self.host_ip + ':' + str(port_fout) + '\n'
+            c.send(msg.encode('ascii'))
+
+        return
 
 #####################################################################   
     def run(self):              # singleton
@@ -248,14 +339,15 @@ class Server:
 
         self.port  = input('port:  ')
         self.port  = int(self.port)
-        #port2 = input('port2: ')
-        #port2 = int(port2)
-        #port3 = input('port3: ')
-        #port3 = int(port3)
+
+        self.port = self.port % 65536
+        if self.port < 1024: self.port += 1024
         self.port2 = (self.port + 1) % 65536
-        if self.port2 < 10000: self.port2 += 10000
+        if self.port2 < 1024: self.port2 += 1024
         self.port3 = (self.port + 2) % 65536
-        if self.port3 < 10000: self.port3 += 10000
+        if self.port3 < 1024: self.port3 += 1024
+        self.port4 = (self.port + 3) % 65536
+        if self.port4 < 1024: self.port4 += 1024
 
         host_name = socket.gethostname()
         self.host_ip = socket.gethostbyname(host_name)
@@ -263,21 +355,32 @@ class Server:
         print("port:    ", self.port)
         print("port2:   ", self.port2)
         print("port3:   ", self.port3)
+        print("port4:   ", self.port4)
 
 
+    # recv request from/send respond to client socket
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.bind(('', self.port))
 
+    # send msg to client socket
         self.s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s2.bind(('', self.port2))
 
+    # file in socket
         self.s3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s3.bind(('', self.port3))
+    
+    # file out socket
+        self.s4 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s4.bind(('', self.port4))
 
-        _thread.start_new_thread(self.listening,(self.s, self.port))
-        _thread.start_new_thread(self.listening_msg,(self.s2, self.port2))
+        _thread.start_new_thread(self.listening, (self.s, self.port))
+        _thread.start_new_thread(self.listening_msg, (self.s2, self.port2))
         # TODO: start new thread for file transfer socket
         #   issue: need 2 sockets for file in/out?
+        _thread.start_new_thread(self.listening_fin,  (self.s3, self.port3))
+        _thread.start_new_thread(self.listening_fout, (self.s4, self.port4))
+
 
         while True:
             req = input('->')
@@ -285,14 +388,17 @@ class Server:
                 for cli in self.cli_list:
                     cli.close()
                 break
+
             elif req == 'ot':
-                pass
+                result = push_req('show_online_table', ())
+            
             elif req == 'status':
                 pass
 
         self.s.close()
         self.s2.close()
         self.s3.close()
+        self.s4.close()
 
 server = Server()
 server.run()

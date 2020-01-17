@@ -67,8 +67,9 @@ def request_to_UIH_handler(self):            # singleton
         elif req[1] == 'update_online_table':
             ID = req[0]
             dest_s_addr = req[2][0]
-            dest_s2_cli = req[2][1]
-            result = uih.update_online_table(dest_s_addr, dest_s2_cli)
+            dest_s_another_cli = req[2][1]
+            func = req[2][2]
+            result = uih.update_online_table(dest_s_addr, dest_s_another_cli, func)
             print(result)
             self.result_list.append((ID, result))
             pass
@@ -78,6 +79,15 @@ def request_to_UIH_handler(self):            # singleton
             account_name = req[2]
             result = uih.msgsocket(account_name)
             self.result_list.append((ID, result))                
+
+        elif req[1] == 'show_online_table':
+            try:
+                print(self.uih.online_table)
+                result = 'SUCCESS'
+            except:
+                result = 'FAIL'
+            ID = req[0]
+            self.result_list.append((ID, result))
 
         #elif req[1] == 'sendfile':
             #ID = req[0]
