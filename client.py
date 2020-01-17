@@ -2,6 +2,7 @@ import socket
 import _thread
 from myparser import parse_addr_str
 import time
+import getpass
 
 def waiting_for_msg(server_addr_str, my_addr_str):
     server_addr = parse_addr_str(server_addr_str)
@@ -31,15 +32,23 @@ print(msg.decode('ascii'))
 
 req = ''
 
+passwd = False
 login = False
 Login_SUCCESS = 'Login Success!'
 
 while req != 'exit' or login == True:
-    req = input()
+    if passwd == True:
+        req = getpass.getpass('')
+        passwd = False
+    else:
+        req = input()
     s.send(req.encode('ascii'))
 	
     msg_r = s.recv(1024)
     print(msg_r.decode('ascii'))
+
+    if msg_r.decode('ascii') == 'password:     ':
+            passwd = True
 
     # before login
     if  (req == 'reg' or req == 'login') and login == False:
@@ -47,6 +56,7 @@ while req != 'exit' or login == True:
 
         msg = s.recv(1024)
         print(msg.decode('ascii'))
+
         #time.sleep(0.05)
      
     # after login
