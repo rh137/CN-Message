@@ -1,3 +1,6 @@
+import time
+import os
+
 def send( source , destination , message , cli , result):
 
     if result[0] == 'INVALID_ACCOUNT':
