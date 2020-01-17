@@ -113,8 +113,18 @@ class userInfoHandler:
                     return ('OFFLINE',None)
         return ('INVALID_ACCOUNT',None)
 
-    def logout(self):
-        pass
+    def logout(self , account_name):
+        for i, user in enumerate(self.online_table):
+            if user[1] == account_name:
+                sck = user[4]
+                user_tmp = list(user)
+                user_tmp[2] = False
+                user_tmp[3] = None
+                user_tmp[4] = None
+                user_tmp[5] = None
+                user_tmp[6] = None
+                self.online_table[i] = tuple(user_tmp)
+                return sck
 
     def update_online_table(self, dest_s_addr, dest_s2_cli):
         print('type of dest_s_addr: ', type(dest_s_addr))
