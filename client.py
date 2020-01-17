@@ -16,6 +16,11 @@ def waiting_for_msg(server_addr_str, my_addr_str):
     while True:
         msg_recv = msg_socket.recv(1024)
         print(msg_recv.decode('ascii'))
+        if msg_recv.decode('ascii') == 'exit':
+            break
+
+    msg_socket.close()
+    _thread.exit()
 
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -73,11 +78,12 @@ while req != 'exit' or login == True:
         msg = s.recv(1024).decode('ascii')
         print('[from query]\n', msg)
        
-    elif req.split(' ')[0] == 'exit' and login == True:
+    elif req.split(' ')[0] == 'logout' and login == True:
         # TODO: logout
-        pass
-
-
+        msg = s.recv(1024).decode('ascii')
+        print('[from logout]\n', msg)
+        if msg == 'Bye Bye':
+            login = False
 	
     if msg_r.decode('ascii') == Login_SUCCESS and login == False:
 	# create a new thread connecting to server msg socket
