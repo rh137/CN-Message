@@ -9,7 +9,7 @@ import time
 #import user_Info_handler
 from integrity_checker import check_integrity
 from myparser import parse_addr_str
-
+from msg_handler import send, query, receive
 
 class Server:
     
