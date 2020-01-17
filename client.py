@@ -1,33 +1,32 @@
 import socket
 import _thread
 from myparser import parse_addr_str
+import time
 
 def waiting_for_msg(server_addr_str, my_addr_str):
-	server_addr = parse_addr_str(server_addr_str)
-	msg_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	host = server_addr[0]
-	port = server_addr[1]
-	msg_socket.connect((host, port))
+    server_addr = parse_addr_str(server_addr_str)
+    msg_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host = server_addr[0]
+    port = server_addr[1]
+    msg_socket.connect((host, port))
 
-	msg_socket.send(my_addr_str.encode('ascii'))
+    msg_socket.send(my_addr_str.encode('ascii'))
 
-	while True:
-		msg_recv = msg_socket.recv(1024)
-		print(msg_recv.decode('ascii'))
+    while True:
+        msg_recv = msg_socket.recv(1024)
+        print(msg_recv.decode('ascii'))
+
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 host = input('host ip: ')
 port = input('port:    ')
 
-#host = int(host)
 port = int(port)
 
 s.connect((host,port))
 
 msg = s.recv(1024)
-
-#print(msg)
 print(msg.decode('ascii'))
 
 req = ''
@@ -35,39 +34,63 @@ req = ''
 login = False
 Login_SUCCESS = 'Login Success!'
 
-while req != 'exit' or login:
-	req = input()
-	s.send(req.encode('ascii'))
+while req != 'exit' or login == True:
+    req = input()
+    s.send(req.encode('ascii'))
 	
-	if   req == 'reg' or req == 'login':
-		msg = s.recv(1024)
-		print(msg.decode('ascii'))
-	#elif req == '':	
+    msg_r = s.recv(1024)
+    print(msg_r.decode('ascii'))
 
-	msg = s.recv(1024)
-	print(msg.decode('ascii'))
+    # before login
+    if  (req == 'reg' or req == 'login') and login == False:
+        s.send('foo'.encode('ascii'))
+
+        msg = s.recv(1024)
+        print(msg.decode('ascii'))
+        #time.sleep(0.05)
+     
+    # after login
+    elif req.split(' ')[0] == 'send' and login == True:
+        msg = s.recv(1024).decode('ascii')
+        print('[from send]', msg)
+
+    elif req.split(' ')[0] == 'sendfile' and login == True:
+        # TODO: complete this block
+        msg = s.recv(1024).decode('ascii')
+        print('[from sendfile]', msg)
+
+    elif req.split(' ')[0] == 'query' and login == True:
+        msg = s.recv(1024).decode('ascii')
+        print('[from query]\n', msg)
+       
+    elif req.split(' ')[0] == 'exit' and login == True:
+        # TODO: logout
+        pass
+
+
 	
-	if msg.decode('ascii') == Login_SUCCESS:
-		# TODO: create a new thread connecting to server msg socket
-		login = True
-		s.send('welcome msg received'.encode('ascii'))
+    if msg_r.decode('ascii') == Login_SUCCESS and login == False:
+	# create a new thread connecting to server msg socket
+        login = True
+        s.send('welcome msg received'.encode('ascii'))
 
-		msg = s.recv(1024)
-		myaddr = msg.decode('ascii')
-		print('identity:', myaddr)
-		print('type:     ({}, {})'.format(type(myaddr[0]), type(myaddr[1])))
+        msg = s.recv(1024)
+        myaddr = msg.decode('ascii')
+        #print('identity:', myaddr)
+        #print('type:     ({}, {})'.format(type(myaddr[0]), type(myaddr[1])))
 
-		s.send('my addr received'.encode('ascii'))
+        s.send('my addr received'.encode('ascii'))
 
-		msg = s.recv(1024)
-		svaddr = msg.decode('ascii')
-		print('dest:    ', svaddr)
-		#print('type:    ', type(svaddr))
-		print('type:     ({}, {})'.format(type(svaddr[0]), type(svaddr[1])))
+        msg = s.recv(1024)
+        svaddr = msg.decode('ascii')
+        #print('dest:    ', svaddr)
+        #print('type:     ({}, {})'.format(type(svaddr[0]), type(svaddr[1])))
 		
-		s.send('sv addr received'.encode('ascii'))
+        s.send('sv addr received'.encode('ascii'))
 
-		_thread.start_new_thread(waiting_for_msg, (svaddr, myaddr))
-		
+        _thread.start_new_thread(waiting_for_msg, (svaddr, myaddr))
+
+        msg = s.recv(65536)     # offline message
+        print(msg.decode('ascii'))
 
 s.close()

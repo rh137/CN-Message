@@ -33,11 +33,13 @@ class Server:
     def logged_in_client(self, cli, addr , account_name):      # multi thread
         
         print('(wlcm)', cli.recv(1024).decode('ascii'))
-    
         cli.send(str(addr).encode('ascii'))
         print('(addr)', cli.recv(1024).decode('ascii'))
         cli.send(str((self.host_ip, self.port2)).encode('ascii'))
         print('(self)', cli.recv(1024).decode('ascii'))
+
+        msg_send = receive(account_name)
+        cli.send(msg_send.encode('ascii'))
             
         while True:
 
@@ -49,25 +51,38 @@ class Server:
             
             msg = msg_recv.split(' ',2)
 
-            if msg[0] == 'send' and len(msg) == 3:
-                print('sending!!!')
-                send(account_name,msg[1],msg[2],cli,self.push_req(msg_recv, msg[1]))
-                pass
-            elif msg[0] == 'sendfile' and len(msg) == 3:
-                print('sendfile!!!')
-                pass
-            elif msg[0] == 'query' and len(msg) == 2:
-                print('query!!!')
-                query(account_name,msg[1],cli)
-                pass
-            elif msg[0] == 'exit' and len(msg) == 1:
+            if msg[0] == 'send':
+                if len(msg) == 3:
+                    print('sending!!!')
+                    msg_send = send(account_name,msg[1],msg[2],cli,self.push_req(msg[0], msg[1]))
+                    cli.send(msg_send.encode('ascii'))
+                else:
+                    print('FORMAT ERROR send')
+                    cli.send('FORMAT ERROR send\nusage: send <dest> <msg>'.encode('ascii'))
+
+            elif msg[0] == 'sendfile':
+                if len(msg) == 3:
+                    print('sendfile!!!')
+                    msg_send = 'successfully send file to {}'.format(msg[1])
+                    cli.send(msg_send.encode('ascii'))
+                else:
+                    print('FORMAT ERROR sendfile')
+                    cli.send('FORMAT ERROR sendfile\nusage: sendfile <dest> <filename>'.encode('ascii'))
+
+            elif msg[0] == 'query':
+                if len(msg) == 2:
+                    print('query!!!')
+                    msg_send = query(account_name,msg[1])
+                    cli.send(msg_send.encode('ascii'))
+                else:
+                    print('FORMAT ERROR query')
+                    cli.send('FORMAT ERROR query\nusage: query <dest>'.encode('ascii'))
+
+            elif msg[0] == 'exit':
                 print('exit!!!')
                 #logout
-                pass
+
             else:
-                msg_send = 'Invalid instruction.\nsend : send + [account name] + [message]\nsend file : sendfile + [account name] + [file relative path]\nquery : query + [account name]\nexit : exit\n'
-                print(msg_send)
-                cli.send(msg_send.encode('ascii'))
                 pass
 
         return
@@ -88,6 +103,7 @@ class Server:
        
 
             if   msg_recv == 'reg':
+                print(cli.recv(1024).decode('ascii'))
 
                 msg_send = 'account name: '
                 cli.send(msg_send.encode('ascii'))
@@ -114,6 +130,7 @@ class Server:
 
 
             elif msg_recv == 'login':
+                print(cli.recv(1024).decode('ascii'))
 
                 msg_send = 'account name: '
                 cli.send(msg_send.encode('ascii'))

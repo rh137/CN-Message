@@ -9,3 +9,6 @@ rmdb:
 
 showdb:
 	python3 peep.py
+
+conn:
+	python3 client.py

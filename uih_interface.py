@@ -75,7 +75,7 @@ def request_to_UIH_handler(self):            # singleton
 
         elif req[1] == 'send':
             ID = req[0]
-            account_name = req[2][0]
+            account_name = req[2]
             result = uih.msgsocket(account_name)
             self.result_list.append((ID, result))                
 
