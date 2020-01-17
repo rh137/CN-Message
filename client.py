@@ -20,7 +20,6 @@ def waiting_for_msg(server_addr_str, my_addr_str):
             break
 
     msg_socket.close()
-    _thread.exit()
 
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
