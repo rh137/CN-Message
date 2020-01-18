@@ -94,9 +94,13 @@ class Server:
             elif msg[0] == 'logout':
                 if len(msg) == 1:
                     print('logout!!!')
-                    msgs = self.push_req(msg[0], account_name)
-                    msgs.send(msg[0].encode('ascii'))
-                    msgs.close()
+                    socket = self.push_req(msg[0], account_name)
+                    socket[0].send(msg[0].encode('ascii'))
+                    socket[0].close()
+                    socket[1].send(msg[0].encode('ascii'))
+                    socket[1].close()
+                    socket[2].send(msg[0].encode('ascii'))
+                    socket[2].close()
                     cli.send('Bye Bye'.encode('ascii'))
                     break
                 else:
