@@ -39,20 +39,20 @@ def waiting_for_fin(server_addr_str, my_addr_str):
         if fin_recv[0] == 'logout':
             break 
         if fin_recv[0] == 'recv':
-            path = os.path.abspath('.') + '/new' + fin_recv[1]
+            path = os.path.abspath('.') + '/new_' + fin_recv[1]
             print(path)
             file = open(path,'wb')
+            file_exist = False
             while True:
                 data = fin_socket.recv(1024)
-                #try:
-                    #data = fin_socket.recv(1024).decode('utf-8')
-                #except:
-                    #data = fin_socket.recv(1024).decode('ascii')
-                file.write(bytes(data))
-                print(len(data))
-                if len(data) < 1024:
+                if data == 'END'.encode('ascii'):
                     break
+                file.write(bytes(data))
+                file_exist = True
+
             file.close()
+            if file_exist == False:
+                os.remove(path)
         pass
         # TODO: handling waiting file input
     
@@ -128,24 +128,21 @@ while req != 'exit' or login == True:
     elif req.split(' ')[0] == 'sendfile' and login == True:
         # TODO: complete this block
         msg = s.recv(1024).decode('ascii')
+        
         print('[from sendfile]', msg)
         if msg.split(' ',1)[0] == 'successfully':
             path = os.path.abspath('.') + '/' + req.split(' ')[2]
-            print(path)
+            if not os.path.exists(path):
+                fout_socket.send('END'.encode('ascii'))
+                continue
             file = open(path,'rb')
             while True:
-                print('aaaaaa')
                 data = file.read(1024)
-                print(len(data))
-                time.sleep(0.05)
-                #try:
-                    #data = data.encode('utf-8')
-                #except:
-                    #data = data.encode('ascii')
-                fout_socket.send(data)
-                print(len(data))
                 if len(data) == 0:
                     break
+                fout_socket.send(data)
+            time.sleep(1)
+            fout_socket.send('END'.encode('ascii'))
             file.close()
 
     elif req.split(' ')[0] == 'query' and login == True:
