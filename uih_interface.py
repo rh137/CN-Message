@@ -90,11 +90,12 @@ def request_to_UIH_handler(self):            # singleton
             ID = req[0]
             self.result_list.append((ID, result))
 
-        #elif req[1] == 'sendfile':
-            #ID = req[0]
-            #account_name = req[2][0]
-            #result = uih.ifonline(account_name)
-            #self.result_list.append((ID, result))     
+        elif req[1] == 'sendfile':
+            ID = req[0]
+            in_name = req[2][0]
+            out_name = req[2][1]
+            result = uih.filesocket(in_name,out_name)
+            self.result_list.append((ID, result))     
 
         elif req[1] == 'logout':
             ID = req[0]
