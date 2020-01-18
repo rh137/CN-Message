@@ -40,12 +40,17 @@ def waiting_for_fin(server_addr_str, my_addr_str):
             break 
         if fin_recv[0] == 'recv':
             path = os.path.abspath('.') + '/new' + fin_recv[1]
-            file = open(path,'w')
+            print(path)
+            file = open(path,'wb')
             while True:
-                data = fin_socket.recv(1024).decode('ascii')
-                file.write(data)
+                data = fin_socket.recv(1024)
+                #try:
+                    #data = fin_socket.recv(1024).decode('utf-8')
+                #except:
+                    #data = fin_socket.recv(1024).decode('ascii')
+                file.write(bytes(data))
                 print(len(data))
-                if len(data) == 0:
+                if len(data) < 1024:
                     break
             file.close()
         pass
@@ -127,12 +132,17 @@ while req != 'exit' or login == True:
         if msg.split(' ',1)[0] == 'successfully':
             path = os.path.abspath('.') + '/' + req.split(' ')[2]
             print(path)
-            file = open(path,'r')
+            file = open(path,'rb')
             while True:
-                time.sleep(0.5)
                 print('aaaaaa')
                 data = file.read(1024)
-                fout_socket.send(data.encode('ascii'))
+                print(len(data))
+                time.sleep(0.05)
+                #try:
+                    #data = data.encode('utf-8')
+                #except:
+                    #data = data.encode('ascii')
+                fout_socket.send(data)
                 print(len(data))
                 if len(data) == 0:
                     break
