@@ -100,7 +100,11 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 connected = False
 while not connected:
     host = input('host ip: ')
+    if host[0] == 'd' or host[0] == 'D':
+        host = '140.112.30.44'
+        print('***default host: 140.112.30.44***')
     port = input('port:    ')
+
     
     print('connecting to ({}:{})'.format(host, port))
 
