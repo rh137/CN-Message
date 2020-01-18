@@ -3,6 +3,7 @@ import _thread
 from myparser import parse_addr_str
 import time
 import getpass
+import os
 
 def waiting_for_msg(server_addr_str, my_addr_str):
     server_addr = parse_addr_str(server_addr_str)
@@ -32,18 +33,29 @@ def waiting_for_fin(server_addr_str, my_addr_str):
     fin_socket.send(my_addr_str.encode('ascii'))
 
     while True:
-        fin_recv = fin_socket.recv(1024)
-        print(fin_recv.decode('ascii'))       
-        if fin_recv.decode('ascii') == 'logout':
+        fin = fin_socket.recv(1024).decode('ascii')
+        print(fin)
+        fin_recv = fin.split(' ',1)       
+        if fin_recv[0] == 'logout':
             break 
+        if fin_recv[0] == 'recv':
+            path = os.path.abspath('.') + '/new' + fin_recv[1]
+            file = open(path,'w')
+            while True:
+                data = fin_socket.recv(1024).decode('ascii')
+                file.write(data)
+                print(len(data))
+                if len(data) == 0:
+                    break
+            file.close()
         pass
         # TODO: handling waiting file input
     
     fin_socket.close()
 
-def waiting_for_fout(server_addr_str, my_addr_str):
+def waiting_for_fout(server_addr_str, my_addr_str, fout_socket):
     server_addr = parse_addr_str(server_addr_str)
-    fout_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #fout_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host = server_addr[0]
     port = server_addr[1]
     fout_socket.connect((host, port))
@@ -80,6 +92,8 @@ passwd = False
 login = False
 Login_SUCCESS = 'Login Success!'
 
+fout_socket = None
+
 while req != 'exit' or login == True:
     if passwd == True:
         req = getpass.getpass('')
@@ -110,6 +124,19 @@ while req != 'exit' or login == True:
         # TODO: complete this block
         msg = s.recv(1024).decode('ascii')
         print('[from sendfile]', msg)
+        if msg.split(' ',1)[0] == 'successfully':
+            path = os.path.abspath('.') + '/' + req.split(' ')[2]
+            print(path)
+            file = open(path,'r')
+            while True:
+                time.sleep(0.5)
+                print('aaaaaa')
+                data = file.read(1024)
+                fout_socket.send(data.encode('ascii'))
+                print(len(data))
+                if len(data) == 0:
+                    break
+            file.close()
 
     elif req.split(' ')[0] == 'query' and login == True:
         msg = s.recv(1024).decode('ascii')
@@ -149,7 +176,9 @@ while req != 'exit' or login == True:
 
         s.send('s3 addr received'.encode('ascii'))
 
-        _thread.start_new_thread(waiting_for_fout, (s3addr, myaddr))
+        fout_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        _thread.start_new_thread(waiting_for_fout, (s3addr, myaddr, fout_socket))
 
     # socket 4 for RECEIVING files (client-side)
         msg = s.recv(1024)
