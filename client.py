@@ -40,7 +40,6 @@ def waiting_for_fin(server_addr_str, my_addr_str):
             break 
         if fin_recv[0] == 'recv':
             path = os.path.abspath('.') + '/new_' + fin_recv[1]
-            print(path)
             file = open(path,'wb')
             file_exist = False
             while True:
@@ -130,10 +129,11 @@ while req != 'exit' or login == True:
         msg = s.recv(1024).decode('ascii')
         
         print('[from sendfile]', msg)
-        if msg.split(' ',1)[0] == 'successfully':
+        if msg.split(' ',1)[0] == 'send':
             path = os.path.abspath('.') + '/' + req.split(' ')[2]
             if not os.path.exists(path):
                 fout_socket.send('END'.encode('ascii'))
+                print('Error: You do not have ' + req.split(' ')[2])
                 continue
             file = open(path,'rb')
             while True:
