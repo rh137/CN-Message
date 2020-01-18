@@ -31,10 +31,11 @@ def waiting_for_fin(server_addr_str, my_addr_str):
 
     fin_socket.send(my_addr_str.encode('ascii'))
 
-    while True:
+    while True:        
         pass
         # TODO: handling waiting file input
-        
+    
+    fin_socket.close()
 
 def waiting_for_fout(server_addr_str, my_addr_str):
     server_addr = parse_addr_str(server_addr_str)
@@ -46,8 +47,12 @@ def waiting_for_fout(server_addr_str, my_addr_str):
     fout_socket.send(my_addr_str.encode('ascii'))
 
     while True:
+        #if fout_recv.decode('ascii') == 'logout':
+            #break
         pass
         # TODO: handling waiting file output
+    
+    fout_socket.close()
 
 
 
@@ -153,4 +158,3 @@ while req != 'exit' or login == True:
         print(msg.decode('ascii'))
 
 s.close()
-
