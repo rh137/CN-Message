@@ -91,8 +91,10 @@ class Server:
 
                         while True: #without encode & decode
                             data = socket[2].recv(1024)
+                            print('recv :' , len(data))
                             socket[1].send(data)
-                            if len(data) == 0:
+                            print('send :' , len(data))
+                            if len(data) < 1024:
                                 break
                 else:
                     print('FORMAT ERROR sendfile')
