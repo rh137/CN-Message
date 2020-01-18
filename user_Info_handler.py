@@ -116,7 +116,7 @@ class userInfoHandler:
     def logout(self , account_name):
         for i, user in enumerate(self.online_table):
             if user[1] == account_name:
-                sck = user[4]
+                sck = (user[4] , user[5] , user[6])
                 user_tmp = list(user)
                 user_tmp[2] = False
                 user_tmp[3] = None
