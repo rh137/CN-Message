@@ -12,6 +12,7 @@ from myparser import parse_addr_str
 from msg_handler import send, query, receive
 
 MAX_CONN = 100
+TIMEOUT_CONN = 3
 
 class Server:
     
@@ -33,6 +34,7 @@ class Server:
     from uih_interface import get_result
     from uih_interface import push_req
     from uih_interface import request_to_UIH_handler
+
 
 #####################################################################   
     def logged_in_client(self, cli, addr , account_name):      # multi thread
@@ -83,17 +85,21 @@ class Server:
                     elif socket[0] == 'INVALID':
                         msg_send = '{} is invalid'.format(msg[1])
                         cli.send(msg_send.encode('ascii'))
-                    else:
+                    elif socket[0] == 'ONLINE':
                         msg_in = 'recv ' + msg[2]
                         socket[1].send(msg_in.encode('ascii'))
-                        msg_send = 'successfully send file to {}'.format(msg[1])
+                        msg_send = 'send file to {}'.format(msg[1])
                         cli.send(msg_send.encode('ascii'))
 
                         while True: #without encode & decode
                             data = socket[2].recv(1024)
+                            print('recv : ' , len(data))
                             socket[1].send(data)
-                            if len(data) == 0:
+                            print('send : ' , len(data))
+                            if data == 'END'.encode('ascii'):
                                 break
+                    else:
+                        print('sendfile ERROR')
                 else:
                     print('FORMAT ERROR sendfile')
                     cli.send('FORMAT ERROR sendfile\nusage: sendfile <dest> <filename>'.encode('ascii'))

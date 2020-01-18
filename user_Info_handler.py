@@ -115,16 +115,18 @@ class userInfoHandler:
 
     def filesocket(self , in_name , out_name):
         status = 'INVALID'
+        finsocket = None
+        foutsocket = None
         for i, user in enumerate(self.online_table):
             if user[1] == in_name:
                 if user[2] == True:
                     status = 'ONLINE'
-                    finsocket = user[5]
+                    finsocket = user[6]
                 else:
                     status = 'OFFLINE'
                     finsocket = None
             elif user[1] == out_name:
-                    foutsocket = user[6]
+                    foutsocket = user[5]
         return (status,finsocket,foutsocket)
 
     def logout(self , account_name):
