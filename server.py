@@ -76,8 +76,24 @@ class Server:
             elif msg[0] == 'sendfile':
                 if len(msg) == 3:
                     print('sendfile!!!')
-                    msg_send = 'successfully send file to {}'.format(msg[1])
-                    cli.send(msg_send.encode('ascii'))
+                    socket = self.push_req(msg[0], (msg[1] , account_name))
+                    if socket[0] == 'OFFLINE':
+                        msg_send = '{} is offline'.format(msg[1])
+                        cli.send(msg_send.encode('ascii'))
+                    elif socket[0] == 'INVALID':
+                        msg_send = '{} is invalid'.format(msg[1])
+                        cli.send(msg_send.encode('ascii'))
+                    else:
+                        msg_in = 'recv ' + msg[2]
+                        socket[1].send(msg_in.encode('ascii'))
+                        msg_send = 'successfully send file to {}'.format(msg[1])
+                        cli.send(msg_send.encode('ascii'))
+
+                        while True: #without encode & decode
+                            data = socket[2].recv(1024)
+                            socket[1].send(data)
+                            if len(data) == 0:
+                                break
                 else:
                     print('FORMAT ERROR sendfile')
                     cli.send('FORMAT ERROR sendfile\nusage: sendfile <dest> <filename>'.encode('ascii'))
@@ -94,9 +110,13 @@ class Server:
             elif msg[0] == 'logout':
                 if len(msg) == 1:
                     print('logout!!!')
-                    msgs = self.push_req(msg[0], account_name)
-                    msgs.send(msg[0].encode('ascii'))
-                    msgs.close()
+                    socket = self.push_req(msg[0], account_name)
+                    socket[0].send(msg[0].encode('ascii'))
+                    socket[0].close()
+                    socket[1].send(msg[0].encode('ascii'))
+                    socket[1].close()
+                    socket[2].send(msg[0].encode('ascii'))
+                    socket[2].close()
                     cli.send('Bye Bye'.encode('ascii'))
                     break
                 else:

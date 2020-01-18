@@ -113,10 +113,24 @@ class userInfoHandler:
                     return ('OFFLINE',None)
         return ('INVALID_ACCOUNT',None)
 
+    def filesocket(self , in_name , out_name):
+        status = 'INVALID'
+        for i, user in enumerate(self.online_table):
+            if user[1] == in_name:
+                if user[2] == True:
+                    status = 'ONLINE'
+                    finsocket = user[5]
+                else:
+                    status = 'OFFLINE'
+                    finsocket = None
+            elif user[1] == out_name:
+                    foutsocket = user[6]
+        return (status,finsocket,foutsocket)
+
     def logout(self , account_name):
         for i, user in enumerate(self.online_table):
             if user[1] == account_name:
-                sck = user[4]
+                sck = (user[4] , user[5] , user[6])
                 user_tmp = list(user)
                 user_tmp[2] = False
                 user_tmp[3] = None

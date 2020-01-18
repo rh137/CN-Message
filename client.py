@@ -4,6 +4,7 @@ from myparser import parse_addr_str
 import time
 import getpass
 import signal
+import os
 
 TIMEOUT_CONN = 2
 
@@ -45,16 +46,30 @@ def waiting_for_fin(server_addr_str, my_addr_str):
     fin_socket.send(my_addr_str.encode('ascii'))
 
     while True:
+        fin = fin_socket.recv(1024).decode('ascii')
+        print(fin)
+        fin_recv = fin.split(' ',1)       
+        if fin_recv[0] == 'logout':
+            break 
+        if fin_recv[0] == 'recv':
+            path = os.path.abspath('.') + '/new' + fin_recv[1]
+            file = open(path,'w')
+            while True:
+                data = fin_socket.recv(1024).decode('ascii')
+                file.write(data)
+                print(len(data))
+                if len(data) == 0:
+                    break
+            file.close()
         pass
         # TODO: handling waiting file input
-        
-
-#********** unnecessary thread **********
-def waiting_for_fout(server_addr_str, my_addr_str):
-
-    server_addr = parse_addr_str(server_addr_str)
-    fout_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
+    fin_socket.close()
+
+
+def waiting_for_fout(server_addr_str, my_addr_str, fout_socket):
+    server_addr = parse_addr_str(server_addr_str)
+    #fout_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host = server_addr[0]
     port = server_addr[1]
     fout_socket.connect((host, port))
@@ -62,8 +77,14 @@ def waiting_for_fout(server_addr_str, my_addr_str):
     fout_socket.send(my_addr_str.encode('ascii'))
 
     while True:
+        fout_recv = fout_socket.recv(1024)
+        print(fout_recv.decode('ascii'))     
+        if fout_recv.decode('ascii') == 'logout':
+            break
         pass
         # TODO: handling waiting file output
+    
+    fout_socket.close()
 
 
 
@@ -76,7 +97,7 @@ while not connected:
     host = input('host ip: ')
     port = input('port:    ')
     
-    print('connecting to ({},{})'.format(host, port))
+    print('connecting to ({}:{})'.format(host, port))
 
     s.close()
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -93,7 +114,7 @@ while not connected:
         connected = True
         signal.alarm(0)
     except:
-        print('fail to connect to {}:{}\nTry another IP:port'.format(host, port))
+        print('fail to connect to ({}:{})\nTry another IP:port'.format(host, port))
         signal.alarm(0)
 
 msg = s.recv(1024)
@@ -105,6 +126,7 @@ passwd = False
 login = False
 Login_SUCCESS = 'Login Success!'
 
+fout_socket = None
 
 while req != 'exit' or login == True:
     if passwd == True:
@@ -113,6 +135,8 @@ while req != 'exit' or login == True:
     else:
         req = input()
     s.send(req.encode('ascii'))
+
+    if(len(req) == 0): continue
 	
     msg_r = s.recv(1024)
     print(msg_r.decode('ascii'))
@@ -136,6 +160,19 @@ while req != 'exit' or login == True:
         # TODO: complete this block
         msg = s.recv(1024).decode('ascii')
         print('[from sendfile]', msg)
+        if msg.split(' ',1)[0] == 'successfully':
+            path = os.path.abspath('.') + '/' + req.split(' ')[2]
+            print(path)
+            file = open(path,'r')
+            while True:
+                time.sleep(0.5)
+                print('aaaaaa')
+                data = file.read(1024)
+                fout_socket.send(data.encode('ascii'))
+                print(len(data))
+                if len(data) == 0:
+                    break
+            file.close()
 
     elif req.split(' ')[0] == 'query' and login == True:
         msg = s.recv(1024).decode('ascii')
@@ -175,7 +212,9 @@ while req != 'exit' or login == True:
 
         s.send('s3 addr received'.encode('ascii'))
 
-        _thread.start_new_thread(waiting_for_fout, (s3addr, myaddr))
+        fout_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        _thread.start_new_thread(waiting_for_fout, (s3addr, myaddr, fout_socket))
 
     # socket 4 for RECEIVING files (client-side)
         msg = s.recv(1024)
@@ -190,4 +229,3 @@ while req != 'exit' or login == True:
         print(msg.decode('ascii'))
 
 s.close()
-
