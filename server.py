@@ -12,6 +12,7 @@ from myparser import parse_addr_str
 from msg_handler import send, query, receive
 
 MAX_CONN = 100
+TIMEOUT_CONN = 3
 
 class Server:
     
@@ -33,6 +34,7 @@ class Server:
     from uih_interface import get_result
     from uih_interface import push_req
     from uih_interface import request_to_UIH_handler
+
 
 #####################################################################   
     def logged_in_client(self, cli, addr , account_name):      # multi thread
@@ -94,7 +96,7 @@ class Server:
                             print('recv :' , len(data))
                             socket[1].send(data)
                             print('send :' , len(data))
-                            if len(data) < 1024:
+                            if data == 'END'.encode('ascii'):
                                 break
                 else:
                     print('FORMAT ERROR sendfile')
