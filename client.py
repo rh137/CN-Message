@@ -3,6 +3,19 @@ import _thread
 from myparser import parse_addr_str
 import time
 import getpass
+import signal
+
+TIMEOUT_CONN = 2
+
+class TimeOutException(Exception):
+    pass
+
+def alarm_handler(signum, frame):
+    print("ALARM signal received")
+    raise TimeOutException()
+
+def myconnect(socket, arg):
+    socket.connect(arg)
 
 def waiting_for_msg(server_addr_str, my_addr_str):
     server_addr = parse_addr_str(server_addr_str)
@@ -36,9 +49,12 @@ def waiting_for_fin(server_addr_str, my_addr_str):
         # TODO: handling waiting file input
         
 
+#********** unnecessary thread **********
 def waiting_for_fout(server_addr_str, my_addr_str):
+
     server_addr = parse_addr_str(server_addr_str)
     fout_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
     host = server_addr[0]
     port = server_addr[1]
     fout_socket.connect((host, port))
@@ -51,14 +67,34 @@ def waiting_for_fout(server_addr_str, my_addr_str):
 
 
 
+
+s = None #socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-host = input('host ip: ')
-port = input('port:    ')
+connected = False
+while not connected:
+    host = input('host ip: ')
+    port = input('port:    ')
+    
+    print('connecting to ({},{})'.format(host, port))
 
-port = int(port)
+    s.close()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-s.connect((host,port))
+    try:
+        port = int(port)
+    except:
+        print('invalid port')
+        continue
+    try:
+        signal.signal(signal.SIGALRM, alarm_handler)
+        signal.alarm(TIMEOUT_CONN)
+        myconnect(s, (host,port))
+        connected = True
+        signal.alarm(0)
+    except:
+        print('fail to connect to {}:{}\nTry another IP:port'.format(host, port))
+        signal.alarm(0)
 
 msg = s.recv(1024)
 print(msg.decode('ascii'))
@@ -68,6 +104,7 @@ req = ''
 passwd = False
 login = False
 Login_SUCCESS = 'Login Success!'
+
 
 while req != 'exit' or login == True:
     if passwd == True:

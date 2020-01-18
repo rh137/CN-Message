@@ -1,5 +1,5 @@
-run:
-	python3 server.py
+install:
+	echo 'do nothing'
 
 clean:
 	rm *~
@@ -10,5 +10,10 @@ rmdb:
 showdb:
 	python3 peep.py
 
+run:
+	python3 server.py
+
 conn:
 	python3 client.py
+
+
