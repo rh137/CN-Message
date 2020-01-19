@@ -7,8 +7,9 @@ def send( source , destination , message , cli , result):
         msg = destination + ' does not exist.\n'
         return msg
         #cli.send(msg.encode('ascii'))
+
     else:
-        packet = '[' + time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())  + ']' + source + ': ' + message + '\n'
+        packet = '[' + time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())  + '] ' + source + ': ' + message
 
         dir = os.path.abspath('.') + '/data'
         srcdir = dir + "/" + source
@@ -39,7 +40,7 @@ def send( source , destination , message , cli , result):
         elif result[0] == 'OFFLINE':
             s = 'offline user'
             buffile = open(desdir + "/" + 'buffer' + '.txt','a')
-            buffile.write(packet)
+            buffile.write(packet+'\n')
             buffile.close()
 
         return 'successfully send to {} {}'.format(s, destination)

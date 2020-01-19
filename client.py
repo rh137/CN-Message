@@ -5,6 +5,7 @@ import time
 import getpass
 import signal
 import os
+import sys
 
 TIMEOUT_CONN = 2
 
@@ -15,8 +16,46 @@ def alarm_handler(signum, frame):
     print("ALARM signal received")
     raise TimeOutException()
 
-def myconnect(socket, arg):
-    socket.connect(arg)
+def myconnect(s):
+
+    connected = False
+    while not connected:
+        host = input('\n[connect] host ip: ')
+        if len(host) <= 6 or host[0] == 'd' or host[0] == 'D':
+            host = '140.112.30.44'
+            print('***default host: 140.112.30.44***')
+        port = input('[connect] port:    ')
+    
+        try:
+            port = int(port)
+        except:
+            print('\n*** port <{}> is invalid! ***\n*** port must be an integer in [1024, 65535] ***\n\nTry another IP:port'.format(port))
+            continue
+
+        if port <= 1023 or port >= 65536:
+            print('\n*** port <{}> is invalid! ***\n*** port must be an integer in [1024, 65535] ***\n\nTry another IP:port'.format(port))
+            continue
+    
+        print('connecting to ({}:{})'.format(host, port))
+
+        s.close()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        try:
+            signal.signal(signal.SIGALRM, alarm_handler)
+            signal.alarm(TIMEOUT_CONN)
+            s.connect((host, port))
+            connected = True
+            signal.alarm(0)
+        except TimeOutException:
+            print('\n*** Timeout when connecting to ({}:{}) ***\n\nTry another IP:port'.format(host, port))
+            signal.alarm(0)
+        except:
+            print('\n*** Fail to connect to ({}:{}) ***\n\nTry another IP:port'.format(host, port))
+            signal.alarm(0)
+    
+    return s
+
 
 def waiting_for_msg(server_addr_str, my_addr_str):
     server_addr = parse_addr_str(server_addr_str)
@@ -29,9 +68,11 @@ def waiting_for_msg(server_addr_str, my_addr_str):
 
     while True:
         msg_recv = msg_socket.recv(1024)
-        print(msg_recv.decode('ascii'))
         if msg_recv.decode('ascii') == 'logout':
+            print('***SERVER TERMINATES msg***')
             break
+
+        print(msg_recv.decode('ascii'))
 
     msg_socket.close()
 
@@ -47,10 +88,13 @@ def waiting_for_fin(server_addr_str, my_addr_str):
 
     while True:
         fin = fin_socket.recv(1024).decode('ascii')
-        print(fin)
-        fin_recv = fin.split(' ',1)       
+        fin_recv = fin.split(' ', 1)
         if fin_recv[0] == 'logout':
+            print('***SERVER TERMINATES fin***')
             break 
+        
+        print(fin)
+
         if fin_recv[0] == 'recv':
             path = os.path.abspath('.') + '/new_' + fin_recv[1]
             file = open(path,'wb')
@@ -66,7 +110,6 @@ def waiting_for_fin(server_addr_str, my_addr_str):
             if file_exist == False:
                 os.remove(path)
         pass
-        # TODO: handling waiting file input
     
     fin_socket.close()
 
@@ -82,48 +125,21 @@ def waiting_for_fout(server_addr_str, my_addr_str, fout_socket):
 
     while True:
         fout_recv = fout_socket.recv(1024)
-        print(fout_recv.decode('ascii'))     
+        fout = fout_recv.decode('ascii')
         if fout_recv.decode('ascii') == 'logout':
+            print('***SERVER TERMINATES fout***') 
             break
+
+        print(fout_recv.decode('ascii'))
         pass
-        # TODO: handling waiting file output
     
     fout_socket.close()
 
 
+# main()
 
-
-s = None #socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-connected = False
-while not connected:
-    host = input('host ip: ')
-    if host[0] == 'd' or host[0] == 'D':
-        host = '140.112.30.44'
-        print('***default host: 140.112.30.44***')
-    port = input('port:    ')
-
-    
-    print('connecting to ({}:{})'.format(host, port))
-
-    s.close()
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    try:
-        port = int(port)
-    except:
-        print('invalid port')
-        continue
-    try:
-        signal.signal(signal.SIGALRM, alarm_handler)
-        signal.alarm(TIMEOUT_CONN)
-        myconnect(s, (host,port))
-        connected = True
-        signal.alarm(0)
-    except:
-        print('fail to connect to ({}:{})\nTry another IP:port'.format(host, port))
-        signal.alarm(0)
+s = myconnect(s)
 
 msg = s.recv(1024)
 print(msg.decode('ascii'))
@@ -136,6 +152,8 @@ Login_SUCCESS = 'Login Success!'
 
 fout_socket = None
 
+SERVER_TERMINATE_MSG = '___SERVER_TERMINATES___'
+
 while req != 'exit' or login == True:
     if passwd == True:
         req = getpass.getpass('')
@@ -147,10 +165,25 @@ while req != 'exit' or login == True:
     if(len(req) == 0): continue
 	
     msg_r = s.recv(1024)
-    print(msg_r.decode('ascii'))
+    msg_rd = msg_r.decode('ascii')
+    if msg_rd[0:len(SERVER_TERMINATE_MSG)] == SERVER_TERMINATE_MSG:
+        print('***ERROR: {}***'.format(SERVER_TERMINATE_MSG))
+        if not login:
+            #s.send('exit(not yet logged in)'.encode('ascii'))
+            req = 'exit'
+            continue
+        else:
+            try:
+                s.send('logout'.encode('ascii'))
+            except:
+                exit()
+            break
+    else:
+        print(msg_rd)
 
-    if msg_r.decode('ascii') == 'password:     ':
-            passwd = True
+
+    if msg_rd == 'password:     ':
+        passwd = True
 
     # before login
     if  (req == 'reg' or req == 'login') and login == False:
@@ -165,7 +198,6 @@ while req != 'exit' or login == True:
         print('[from send]', msg)
 
     elif req.split(' ')[0] == 'sendfile' and login == True:
-        # TODO: complete this block
         msg = s.recv(1024).decode('ascii')
         
         print('[from sendfile]', msg)
@@ -186,11 +218,10 @@ while req != 'exit' or login == True:
             file.close()
 
     elif req.split(' ')[0] == 'query' and login == True:
-        msg = s.recv(1024).decode('ascii')
+        msg = s.recv(65535).decode('ascii')
         print('[from query]\n', msg)
        
     elif req.split(' ')[0] == 'logout' and login == True:
-        # TODO: logout
         msg = s.recv(1024).decode('ascii')
         print('[from logout]\n', msg)
         if msg == 'Bye Bye':

@@ -1,5 +1,6 @@
 import sys
-sys.path.append("/home/student/06/b06902137")
+#sys.path.append("/home/student/06/b06902137")
+sys.path.append("./lib")
 
 import socket
 import _thread
@@ -145,8 +146,10 @@ class Server:
             print(addr, msg_recv)
         
             msg_send = str(addr) + 'msg recv: ' + msg_recv
-            cli.send(msg_send.encode('ascii'))
-        
+            try:
+                cli.send(msg_send.encode('ascii'))
+            except:
+                print('>>>', end = '')
        
 
             if   msg_recv == 'reg':
@@ -233,7 +236,7 @@ class Server:
 
         while True:
             c, addr = socket.accept()
-            print('[req socket] Got connection from', addr)
+            print('[req socket] Got connection from {}\n>>>'.format(addr), end = '')
             
             rst = check_integrity(c, addr)
             if rst == 'BAD':
@@ -421,6 +424,19 @@ class Server:
             req = input('>>>')
             if   req == 'exit':
                 for cli in self.cli_list:
+                    cli.send('___SERVER_TERMINATES___'.encode('ascii'))
+                    cli.close()
+                
+                for cli in self.cli_list_msg:
+                    cli.send('logout'.encode('ascii'))
+                    cli.close()
+                
+                for cli in self.cli_list_fin:
+                    cli.send('logout'.encode('ascii')) 
+                    cli.close()
+                
+                for cli in self.cli_list_fout: 
+                    cli.send('logout'.encode('ascii')) 
                     cli.close()
                 break
 

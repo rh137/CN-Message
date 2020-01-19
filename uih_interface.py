@@ -14,6 +14,7 @@ def get_result(self, ID):           # multi thread
                 break
             else:
                 continue
+        # sleep 0.05 sec for request handler to process
         time.sleep(0.05)
     return result
     
@@ -84,11 +85,11 @@ def request_to_UIH_handler(self):            # singleton
             try:
                 for i in uih.online_table:
                     print(i)
-                result = 'SUCCESS'
+                result = 'success'
             except:
-                result = 'FAIL'
-            ID = req[0]
-            self.result_list.append((ID, result))
+                result = 'fail'
+            id = req[0]
+            self.result_list.append((id, result))
 
         elif req[1] == 'sendfile':
             ID = req[0]
