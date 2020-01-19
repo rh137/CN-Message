@@ -1,5 +1,8 @@
-install:
+foo:
 	echo 'do nothing'
+
+install:
+	pip3 install --target=./lib -i https://pypi.douban.com/simple pycryptodome
 
 clean:
 	rm *~
@@ -16,4 +19,5 @@ run:
 conn:
 	python3 client.py
 
-
+conn2:
+	python3 client.py
