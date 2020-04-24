@@ -1,5 +1,9 @@
 # CN Final Project
 
+## System Architecture
+
+<img src="https://i.imgur.com/MbcPeMA.jpg"/>
+
 ## Cryptography
 
 reference with https://www.itread01.com/content/1542966007.html
